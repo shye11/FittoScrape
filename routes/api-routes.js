@@ -25,13 +25,13 @@ module.exports = app => {
             });
         });
         
-    // scrape data from engadget
+    // scrape data from deadline
     app.get("/scrape", (req, res) => {
-        let source = "https://www.engadget.com/";
+        let source = "https://deadline.com/";
         axios.get(source).then( response => {
 
         // Load the HTML into cheerio and save it to a variable
-        // '$' becomes a shorthand for cheerio's selector commands, much like jQuery's '$'
+        // '$' becomes a shorthand for cheerio's selector commands
         const $ = cheerio.load(response.data);
 
         // An empty array to save the data that we'll scrape
@@ -51,14 +51,11 @@ module.exports = app => {
                     savedArticlesOnDB[article.title].timeStamp = article.timeStamp
                 });
 
-                //console.log("savedArticles",savedArticles);
-                //console.log("savedArticlesOnDB",savedArticlesOnDB);
-
                 $("article.o-hit").each((i, element) => {
                     
                     var image = $(element).find(".lazy,.stretch-img").attr('data-original') || "";
                     var title = $(element).find("h2").text().trim() || "";
-                    var excerpt =  $(element)
+                    var tagline =  $(element)
                                 .find("p")
                                 .text()
                                 .trim() || "";
@@ -73,23 +70,21 @@ module.exports = app => {
                                 .trim();
 
                     // add a link in case it is left it out
-                    if(link.indexOf("https://www.engadget.com") == -1){
-                        link = 'https://www.engadget.com'+link;
+                    if(link.indexOf("https://deadline.com/") == -1){
+                        link = 'https://deadline.com/'+link;
                     }
 
                     if(title && image){
 
-                        // check each article if it's in the saveArticles and include ID
                         var data = {
                             title: title,
-                            image: image,
+                            figure: figure,
                             category: category,
-                            excerpt: excerpt,
+                            byline: byline,
                             source: source,
                             link: link
                         }
                         
-                        // console.log("savedArticlesOnDB[title]",savedArticlesOnDB[title]);
                         if(savedArticlesOnDB[title]){
                             let articleObj = savedArticlesOnDB[title];
                             data._id = articleObj._id;
@@ -102,8 +97,6 @@ module.exports = app => {
                     }
                 });
 
-            // Log the results once you've looped through each of the elements found with cheerio
-            //console.log(results);
             res.render("index",{ 
                 data: results, 
                 totalArticles: articleCount,
@@ -118,7 +111,6 @@ module.exports = app => {
         db.Article.create(req.body)
         .then(dbArticle => res.json(dbArticle))
         .catch(function(err) {
-          // If an error occurred, log it
           console.log(err);
           res.json(err);
         });
@@ -126,7 +118,6 @@ module.exports = app => {
 
     // delete article, delete all associated comments from DB
     app.post("/delete",(req, res) => {
-        // delete all related comments
         db.Comment.deleteMany({ 
             article: req.body._id
         }, 
@@ -144,21 +135,16 @@ module.exports = app => {
         });
     });
 
-    // Get all comments referenced to an Article
     app.get("/comment/:id", (req, res) => {
-        // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
         db.Article.findOne({ _id: req.params.id })
-        // ..and populate all of the notes associated with it
-        .populate("comments.comment")
+        .populate("comment.comments")
         .then(dbArticle => res.json(dbArticle))
-        // If we were able to successfully find an Article with the given id, send it back to the client
         .catch(function(err) {
-            // send error to client
             res.json(err);
         });
     });
 
-    // Delete comment
+    // Delete
     app.post("/comment/delete/:id/:articleId", (req, res) => {
         
         let articleId = req.params.articleId;
@@ -179,18 +165,14 @@ module.exports = app => {
                 });
             }
         })
-        .populate("comments.comment")
+        .populate("comment.comments")
         .exec((err,dbUpdate) => res.json(dbUpdate));
     });
 
-    // Save comment to DB and associate to Article
+    // Save comment to database & associate to article
     app.post("/comment/:id", (req, res) => {
-        // Create a new comment and pass the req.body to the entry
         db.Comment.create(req.body)
-        .then(dbComment => {
-            // If a Comment was created successfully, find one Article with an `_id` equal to `req.params.id`. Update the Article to be associated with the new Comment
-            // { new: true } tells the query that we want it to return the updated User -- it returns the original by default
-            // Since our mongoose query returns a promise, we can chain another `.then` which receives the result of the query   
+        .then(dbComment => {  
             return db.Article.findOneAndUpdate({ 
                 _id: req.params.id 
             },{ 
@@ -199,7 +181,7 @@ module.exports = app => {
                 }
             },{ 
                 new: true 
-            }).populate("comments.comment");
+            }).populate("comment.comments");
         })
         .then(dbArticle => res.json(dbArticle))
         .catch(err => res.json(err));

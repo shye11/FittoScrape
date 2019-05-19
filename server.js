@@ -8,6 +8,7 @@ var axios = require("axios");
 
 var PORT = process.env.PORT || 8889;
 
+var db = require("./models");
 var app = express();
 
 // log requests
