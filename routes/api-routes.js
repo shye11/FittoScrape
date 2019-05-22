@@ -1,17 +1,20 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 const db = require("../models");
+const path = require("path");
 
 module.exports = app => {
-    // catch all route
-    app.get("/", (req, res) => {
-        db.Article.find({}).then(savedArticles => {
-            res.render("index",{ 
-                totalArticles: savedArticles.length,
-                page_title: "home" 
-            });
-        }); 
-    });
+//     // catch all route
+//     app.get("/", (req, res) => {
+//         // db.Article.find({}).then(savedArticles => {
+//         //     res.render("index",{ 
+//         //         totalArticles: savedArticles.length,
+//         //         page_title: "home" 
+//             // });
+//         // }); 
+
+//         res.sendfile(path.join(__dirname, "../index.html"));
+//     });
     // get all saved articles
     app.get("/saved", (req, res) => {
         db.Article.find({})
