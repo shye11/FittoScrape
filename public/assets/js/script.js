@@ -1,4 +1,3 @@
-
 $("#scraper-button").on("click", function() {
     $.ajax({
         url: "/scrape",

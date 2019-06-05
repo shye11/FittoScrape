@@ -7,7 +7,7 @@ var expbhs = require("express-handlebars");
 var cheerio = require("cheerio");
 var axios = require("axios");
 
-var PORT = process.env.PORT || 8880;
+var PORT = process.env.PORT || 3000;
 
 var db = require("./models");
 var app = express();
